@@ -19,6 +19,8 @@ public class ActionGraphQL {
     private String graphqlQuery, token, wssUrl, channelId;
     private JsonObject variables;
     private ActionCallback actionCallback;
+    private Subscription subscription;
+    private Consumer consumer;
 
     public ActionGraphQL(String graphqlQuery, String token, String wssUrl, JsonObject variables, ActionCallback callback) {
         this.graphqlQuery = graphqlQuery;
@@ -31,7 +33,7 @@ public class ActionGraphQL {
     public void subscribe() {
         URI uri = null;
         try {
-            uri = new URI(this.wssUrl);
+            uri = new URI(this.wssUrl + token);
         } catch (URISyntaxException e) {
             e.printStackTrace();
             return;
@@ -44,12 +46,12 @@ public class ActionGraphQL {
         options.headers = headers;
         options.reconnection = true;
 
-        Consumer consumer = ActionCable.createConsumer(uri, options);
+        this.consumer = ActionCable.createConsumer(uri, options);
 
         this.channelId = UUID.randomUUID().toString();
         Channel graphqlChannel = new Channel("GraphqlChannel");
         graphqlChannel.addParam("channelId", channelId);
-        Subscription subscription = consumer.getSubscriptions().create(graphqlChannel);
+        this.subscription = consumer.getSubscriptions().create(graphqlChannel);
 
         subscription
                 .onConnected(() -> {
@@ -75,5 +77,9 @@ public class ActionGraphQL {
                 .onRejected(() -> Log.e(TAG, "Rejected"));
 
         consumer.connect();
+    }
+
+    public void unsubscribeAndDisconnect() {
+        consumer.unsubscribeAndDisconnect();
     }
 }
