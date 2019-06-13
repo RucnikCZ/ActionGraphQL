@@ -15,14 +15,17 @@ import java.util.Map;
 import java.util.UUID;
 
 public class ActionGraphQL {
+    private static String TAG = "ActionGraphQL";
     private String graphqlQuery, token, wssUrl, channelId;
     private JsonObject variables;
+    private ActionCallback actionCallback;
 
-    public ActionGraphQL(String graphqlQuery, String token, String wssUrl, JsonObject variables) {
+    public ActionGraphQL(String graphqlQuery, String token, String wssUrl, JsonObject variables, ActionCallback callback) {
         this.graphqlQuery = graphqlQuery;
         this.token = token;
         this.wssUrl = wssUrl;
         this.variables = variables;
+        this.actionCallback = callback;
     }
 
     public void subscribe() {
@@ -50,7 +53,7 @@ public class ActionGraphQL {
 
         subscription
                 .onConnected(() -> {
-                    Log.e("Cable", "Connected");
+                    Log.e(TAG, "Connected");
 
                     JsonObject graphqlQuery = new JsonObject();
                     graphqlQuery.addProperty("query", this.graphqlQuery);
@@ -59,14 +62,17 @@ public class ActionGraphQL {
                     subscription.perform("execute", graphqlQuery);
                 })
                 .onReceived(jsonElement -> {
-                    Log.e("Cable", "Received " + jsonElement);
-                    if (jsonElement.getAsJsonObject().get("more").getAsBoolean() == false) {
-                        consumer.disconnect();
+                    Log.e(TAG, "Received " + jsonElement);
+                    if (jsonElement.getAsJsonObject().get("data") != null) {
+                        actionCallback.recievedCallBack(jsonElement.getAsJsonObject().get("data").getAsJsonObject());
+                    }
+                    if (!jsonElement.getAsJsonObject().get("more").getAsBoolean()) {
+                        consumer.unsubscribeAndDisconnect();
                     }
                 })
-                .onDisconnected(() -> Log.e("Cable", "Disconnected"))
-                .onFailed(e -> Log.e("Cable", "Failed " + e))
-                .onRejected(() -> Log.e("Cable", "Rejected"));
+                .onDisconnected(() -> Log.e(TAG, "Disconnected"))
+                .onFailed(e -> Log.e(TAG, "Failed " + e))
+                .onRejected(() -> Log.e(TAG, "Rejected"));
 
         consumer.connect();
     }
