@@ -2,6 +2,7 @@ package cz.deepvision.dpvsn.actionGraphql;
 
 import android.util.Log;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.hosopy.actioncable.ActionCable;
 import com.hosopy.actioncable.Channel;
@@ -21,13 +22,32 @@ public class ActionGraphQL {
     private ActionCallback actionCallback;
     private Subscription subscription;
     private Consumer consumer;
+    private Class<?> subscriptionDataClass;
 
-    public ActionGraphQL(String graphqlQuery, String token, String wssUrl, JsonObject variables, ActionCallback callback) {
-        this.graphqlQuery = graphqlQuery;
+    public ActionGraphQL(String token, String wssUrl, JsonObject variables, ActionCallback callback, Class operation) {
         this.token = token;
         this.wssUrl = wssUrl;
         this.variables = variables;
         this.actionCallback = callback;
+        init(operation);
+    }
+
+    private void init(Class operation) {
+        if (!Subscription.class.isAssignableFrom(operation)) {
+            throw new IllegalArgumentException("Not allowed graphql operation");
+        }
+        Class<com.apollographql.apollo.api.Subscription> subscriptionClass = operation;
+
+        try {
+            graphqlQuery = String.valueOf((String) subscriptionClass.getDeclaredField("QUERY_DOCUMENT").get(null));
+            subscriptionDataClass = Class.forName(subscriptionClass.getName() + "$" + "Data");
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     public void subscribe() {
@@ -66,7 +86,10 @@ public class ActionGraphQL {
                 .onReceived(jsonElement -> {
                     Log.e(TAG, "Received " + jsonElement);
                     if (jsonElement.getAsJsonObject().get("result") != null) {
-                        actionCallback.recievedCallBack(jsonElement.getAsJsonObject().get("result").getAsJsonObject());
+                        Gson gson = new Gson();
+
+                        subscriptionDataClass = gson.fromJson(jsonElement.getAsJsonObject().get("result").getAsJsonObject().get("data"), subscriptionDataClass.getClass());
+                        actionCallback.recievedCallBack(subscriptionDataClass);
                     }
                     if (!jsonElement.getAsJsonObject().get("more").getAsBoolean()) {
                         consumer.unsubscribeAndDisconnect();
