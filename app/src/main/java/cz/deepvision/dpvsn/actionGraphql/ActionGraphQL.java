@@ -63,8 +63,8 @@ public class ActionGraphQL {
                 })
                 .onReceived(jsonElement -> {
                     Log.e(TAG, "Received " + jsonElement);
-                    if (jsonElement.getAsJsonObject().get("data") != null) {
-                        actionCallback.recievedCallBack(jsonElement.getAsJsonObject().get("data").getAsJsonObject());
+                    if (jsonElement.getAsJsonObject().get("result") != null) {
+                        actionCallback.recievedCallBack(jsonElement.getAsJsonObject().get("result").getAsJsonObject());
                     }
                     if (!jsonElement.getAsJsonObject().get("more").getAsBoolean()) {
                         consumer.unsubscribeAndDisconnect();

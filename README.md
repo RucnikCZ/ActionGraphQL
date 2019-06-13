@@ -20,6 +20,7 @@ Add the dependency
 
 
 Usage:
+Add implements ActionCallback  to your Activity
 
 String query = "some query";
 String token = "security token";
@@ -33,4 +34,4 @@ jArray.add(element);
 variables.add("branches", jArray);
 
 
-ActionGraphQL actionGraphQL = new ActionGraphQL(query,token,wssUrl,variables); actionGraphQL.subscribe();
+ActionGraphQL actionGraphQL = new ActionGraphQL(query,token,wssUrl,variables, this); actionGraphQL.subscribe();
