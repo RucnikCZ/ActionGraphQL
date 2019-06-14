@@ -22,7 +22,7 @@ public class ActionGraphQL {
     private ActionCallback actionCallback;
     private Subscription subscription;
     private Consumer consumer;
-    private Class<?> subscriptionDataClass;
+    private Class subscriptionDataClass;
 
     public ActionGraphQL(String token, String wssUrl, JsonObject variables, ActionCallback callback, Class operation) {
         this.token = token;
@@ -87,9 +87,8 @@ public class ActionGraphQL {
                     Log.e(TAG, "Received " + jsonElement);
                     if (jsonElement.getAsJsonObject().get("result") != null) {
                         Gson gson = new Gson();
-
-                        subscriptionDataClass = gson.fromJson(jsonElement.getAsJsonObject().get("result").getAsJsonObject().get("data"), subscriptionDataClass.getClass());
-                        actionCallback.recievedCallBack(subscriptionDataClass);
+                        Object result = gson.fromJson(jsonElement.getAsJsonObject().get("result").getAsJsonObject().get("data"), subscriptionDataClass.getClass());
+                        actionCallback.recievedCallBack(result);
                     }
                     if (!jsonElement.getAsJsonObject().get("more").getAsBoolean()) {
                         consumer.unsubscribeAndDisconnect();
