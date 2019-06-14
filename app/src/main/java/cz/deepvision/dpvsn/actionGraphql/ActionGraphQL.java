@@ -33,7 +33,7 @@ public class ActionGraphQL {
     }
 
     private void init(Class operation) {
-        if (!Subscription.class.isAssignableFrom(operation)) {
+        if (!com.apollographql.apollo.api.Subscription.class.isAssignableFrom(operation)) {
             throw new IllegalArgumentException("Not allowed graphql operation");
         }
         Class<com.apollographql.apollo.api.Subscription> subscriptionClass = operation;
