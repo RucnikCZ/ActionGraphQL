@@ -1,5 +1,5 @@
 package cz.deepvision.dpvsn.actionGraphql;
 
-public interface ActionCallback {
-    public void recievedCallBack(Class<?> result);
+public interface ActionCallback<T> {
+    public void recievedCallBack(T result);
 }
