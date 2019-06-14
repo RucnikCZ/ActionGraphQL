@@ -15,16 +15,18 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class ActionGraphQL {
+public class ActionGraphQL<T> {
     private static String TAG = "ActionGraphQL";
     private String graphqlQuery, token, wssUrl, channelId;
     private JsonObject variables;
-    private ActionCallback actionCallback;
+    private ActionCallback<T> actionCallback;
     private Subscription subscription;
     private Consumer consumer;
-    private Class subscriptionDataClass;
+    private String subscriptionDataClassName;
 
-    public ActionGraphQL(String token, String wssUrl, JsonObject variables, ActionCallback callback, Class operation) {
+    private Boolean log = false;
+
+    public ActionGraphQL(String token, String wssUrl, JsonObject variables, ActionCallback<T> callback, Class<com.apollographql.apollo.api.Subscription> operation) {
         this.token = token;
         this.wssUrl = wssUrl;
         this.variables = variables;
@@ -32,7 +34,7 @@ public class ActionGraphQL {
         init(operation);
     }
 
-    private void init(Class operation) {
+    private void init(Class<com.apollographql.apollo.api.Subscription> operation) {
         if (!com.apollographql.apollo.api.Subscription.class.isAssignableFrom(operation)) {
             throw new IllegalArgumentException("Not allowed graphql operation");
         }
@@ -40,12 +42,10 @@ public class ActionGraphQL {
 
         try {
             graphqlQuery = String.valueOf((String) subscriptionClass.getDeclaredField("QUERY_DOCUMENT").get(null));
-            subscriptionDataClass = Class.forName(subscriptionClass.getName() + "$" + "Data");
+            subscriptionDataClassName = subscriptionClass.getName() + "$" + "Data";
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         } catch (NoSuchFieldException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
     }
@@ -61,7 +61,7 @@ public class ActionGraphQL {
 
         Consumer.Options options = new Consumer.Options();
 
-        Map<String, String> headers = new HashMap();
+        Map<String, String> headers = new HashMap<>();
         headers.put("Origin", "https://pos.speedlo.cloud");
         options.headers = headers;
         options.reconnection = true;
@@ -75,7 +75,7 @@ public class ActionGraphQL {
 
         subscription
                 .onConnected(() -> {
-                    Log.e(TAG, "Connected");
+                    if (log) Log.d(TAG, "Connected");
 
                     JsonObject graphqlQuery = new JsonObject();
                     graphqlQuery.addProperty("query", this.graphqlQuery);
@@ -84,24 +84,38 @@ public class ActionGraphQL {
                     subscription.perform("execute", graphqlQuery);
                 })
                 .onReceived(jsonElement -> {
-                    Log.e(TAG, "Received " + jsonElement);
+                    if (log) Log.d(TAG, "Received " + jsonElement);
                     if (jsonElement.getAsJsonObject().get("result") != null) {
                         Gson gson = new Gson();
-                        Object result = gson.fromJson(jsonElement.getAsJsonObject().get("result").getAsJsonObject().get("data"), subscriptionDataClass.getClass());
-                        actionCallback.recievedCallBack(result);
+                        Object result = null;
+                        try {
+                            result = gson.fromJson(jsonElement.getAsJsonObject().get("result").getAsJsonObject().get("data"), Class.forName(subscriptionDataClassName));
+                        } catch (ClassNotFoundException e) {
+                            e.printStackTrace();
+                        }
+                        actionCallback.recievedCallBack((T) result);
                     }
                     if (!jsonElement.getAsJsonObject().get("more").getAsBoolean()) {
                         consumer.unsubscribeAndDisconnect();
                     }
                 })
-                .onDisconnected(() -> Log.e(TAG, "Disconnected"))
+                .onDisconnected(() -> {
+                    if (log) Log.d(TAG, "Disconnected");
+                    actionCallback.disconnectedCallBack();
+                })
                 .onFailed(e -> Log.e(TAG, "Failed " + e))
-                .onRejected(() -> Log.e(TAG, "Rejected"));
+                .onRejected(() -> {
+                    if (log) Log.e(TAG, "Rejected");
+                });
 
         consumer.connect();
     }
 
     public void unsubscribeAndDisconnect() {
         consumer.unsubscribeAndDisconnect();
+    }
+
+    public void setLog(Boolean log) {
+        this.log = log;
     }
 }

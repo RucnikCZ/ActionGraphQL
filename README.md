@@ -23,13 +23,12 @@ Add the dependency
 
 Usage:
 
-Add implements ActionCallback  to your Activity
+Add implements ActionCallback<ReturnType>  to your Activity
 
-    String query = "some query";
     String token = "security token";
     String wssUrl = "websocket url - actionCable";
     JsonObject variables = new JsonObject();
-    //Array example
+    //Example - array of primitives
     JsonArray jArray = new JsonArray();
     JsonPrimitive element = new JsonPrimitive("1");
     jArray.add(element);
@@ -37,4 +36,5 @@ Add implements ActionCallback  to your Activity
     variables.add("branches", jArray);
 
 
-    ActionGraphQL actionGraphQL = new ActionGraphQL(query,token,wssUrl,variables, this); actionGraphQL.subscribe();
+    ActionGraphQL actionGraphQL = new ActionGraphQL(token,wssUrl,variables,this,UpdatedOrderCountCategorySubscription.class);
+    actionGraphQL.subscribe();
