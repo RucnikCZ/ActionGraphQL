@@ -103,7 +103,10 @@ public class ActionGraphQL<T> {
                     if (log) Log.d(TAG, "Disconnected");
                     actionCallback.disconnectedCallBack();
                 })
-                .onFailed(e -> Log.e(TAG, "Failed " + e))
+                .onFailed(e -> {
+                    Log.e(TAG, "Failed " + e);
+                    actionCallback.failedCallBack(e);
+                })
                 .onRejected(() -> {
                     if (log) Log.e(TAG, "Rejected");
                 });
