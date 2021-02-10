@@ -50,7 +50,7 @@ public class ActionGraphQL<T> {
         }
     }
 
-    public void subscribe() {
+    public void subscribe(Boolean reconnect=true) {
         URI uri = null;
         try {
             uri = new URI(this.wssUrl + token);
@@ -64,7 +64,7 @@ public class ActionGraphQL<T> {
         Map<String, String> headers = new HashMap<>();
         headers.put("Origin", "https://pos.speedlo.cloud");
         options.headers = headers;
-        options.reconnection = true;
+        options.reconnection = reconnect;
 
         this.consumer = ActionCable.createConsumer(uri, options);
 
