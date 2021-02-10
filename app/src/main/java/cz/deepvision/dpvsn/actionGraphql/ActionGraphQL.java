@@ -50,7 +50,7 @@ public class ActionGraphQL<T> {
         }
     }
 
-    public void subscribe(Boolean reconnect=true) {
+    public void subscribe(Boolean reconnect) {
         URI uri = null;
         try {
             uri = new URI(this.wssUrl + token);
