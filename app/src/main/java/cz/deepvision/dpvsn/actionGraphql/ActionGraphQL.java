@@ -111,11 +111,14 @@ public class ActionGraphQL<T> {
                     if (log) Log.e(TAG, "Rejected");
                 });
 
-        consumer.connect();
+            consumer.connect();
     }
 
     public void unsubscribeAndDisconnect() {
-        consumer.unsubscribeAndDisconnect();
+        if(this.consumer!=null){
+            this.consumer.unsubscribeAndDisconnect();
+        }
+        
     }
 
     public void setLog(Boolean log) {
